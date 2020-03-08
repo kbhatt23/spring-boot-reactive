@@ -1,0 +1,83 @@
+
+
+Tomcat takes servlet container in spring boot as embeded tomcat server , 
+In Spring boot tomcat is embeded, so the max thread can be manipulated in application.properties
+	-> server.tomcat.max-threads -> this give thread pool max size -> these threads as part of servlet container(tomcat role) individually serve the request from client
+									-> this model is termed as thread per rquest model
+	-> This do not mean we give huge size of max thread pool size and win
+	-> as each thread have memory in RAM and it can make the performace bad as well if set to large value
+
+so to handle huge request we can use horizontal scaling of apps using kubernetes or contianer orchestration but is costly
+
+so reactive programming try to get away from thread per request model
+
+here we try to create more threads from the main thread and do tasks asynchronously -> hence utilization of resource is increased without increase in cost 	
+	-> similiar to asynchronous programming -> non blocking like futures
+
+flow of tech stack in java that try to solve above issue
+
+a. callables : runs in seperate thread , it do not returns anything and also hard to maintain
+b. future: runs in seperate thread it returns value , however multiple asynch task can not be done
+c. copletalblefuture -> easy to mainitain , same as future but cna handle multiple tasks asynchronously ,functional style and hecne easy to maintain
+
+but c is still tough and can be made better using spring reactive -> easy to use
+in completable future there is no back pressure support of data
+in reactrive programming there is back pressure support -> eg in reactive data comes like stream/even so each event will have only one item
+	this allows the service that calls db to process one by one and help in back pressure support
+
+also there is not good enough error handling support in completable future
+
+
+This means reactive programming have all feature of completable future + back pressure supports-> allowing consumer to tackle huge data tasks
+In JPa complatableFuture<List<ITem>> will be non lbocking but will eventually return all list items at once	
+					-> this will make tough for service class to handle and hence no back support
+in reactive programming -> it return stream/even one by one
+
+=======Reactive programming also solve issue with DB, 
+a. if DB is sending huge data then with traditional API it will crash and there is no communication to tell DB to slow down so that api can handle it
+This can be solved using reactive programming -> back pressure compatibility
+
+Issues with old traditional API
+a. Can not handle huge concurrent requests.
+b. latency is slow
+c. Can not handle DB back pressure
+
+best API design approach
+a. Async and non blocking features
+b. move away from therad per rquest
+c. back pressure support in db
+d. use fewer threads and utilize them using reactive programming to fullest - > as each thread takes lot of memory
+
+General example in real life scenario:
+a. imperative programming -> call > communcation happens only at that time
+b. reactive programming -> messaging -> can happen async
+
+Reactive programming is simpilkiar to reactive APIS but are more generic
+Data flows and back support is for streams/events in reactive programming howver in reactive API it have back pressure support on db as well
+
+Reactive Stream concepts(part of java 8)==========================
+
+interfaces
+a. publisher : this represents data source, it has data stream . 
+b. subscriber : this repreent businsess app that wants to access data from publkisher
+c. subscription : this is piplein between the above 2
+methods:
+publisher -> subscribe(Subscriber s)
+Subscriber -> onNext(T t) -> gets called n number of times T represent single entry put of n data requested
+	 -> onComplete() : gets called at the end success
+	 -> onError() - >gets called if any error occurred in subsciber
+Subscription -> cancel -> after calling this no event gets triggered from publisher like on next or oncomplete, on error etc
+	     -> request(long n) -> start eh cahin, publisher callls subscriber n number of time with individual entries
+
+whole flow
+Susbcriber calls subscibe function and pass subscriber object -> publisher sends Subscription object to Subscriber
+		-> Subscriber calls cancel or request function of Subscription -> then Publisher calls on next events n number of times
+		-> then publisher calls on complete funciton or onerror function o Subscriber
+
+The above specification is generic and is used by a lot of libraries
+Means all of them have implementation of above 4 interfaces(Subscriber, Publisher, Subscription , Processor)
+libraries eg: 
+RX java
+project reactor(spring boot default and recommened)
+JDK 9 : Flow classes
+

@@ -4,14 +4,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.junit.Test;
+import org.springframework.boot.test.context.SpringBootTest;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
+@SpringBootTest
 public class FluxMonoBasicTest {
 @Test
 public void basicFlux() {
-	System.out.println("starting test "+"basicFlux");
+	System.out.println("=================starting test "+"basicFlux=======================");
 	Flux<String> flux = //adding data to data source reprsentted as publisher
 			Flux.just("ram" , "sita" , "lakshman" , "hanuman")
 			//logs all the events between publisher and subscriber
@@ -28,7 +29,7 @@ public void basicFlux() {
 
 @Test
 public void basicFluxWithEsception() {
-	System.out.println("starting test "+"basicFluxWithEsception");
+	System.out.println("=================starting test "+"basicFluxWithEsception================");
 	Flux<String> flux = Flux.just("ram" , "sita" , "lakshman" , "hanuman")
 			//to add exception with flux
 			.concatWith(Flux.error(() -> new RuntimeException("hey ram bachao exception se")))

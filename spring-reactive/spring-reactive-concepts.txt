@@ -81,3 +81,14 @@ RX java
 project reactor(spring boot default and recommened)
 JDK 9 : Flow classes
 
+
+Testing using assert can be done usingStepverifier in webflux
+The exact sequence of events can be verified creating Stepverifier instance
+
+We can combine fluxes in 3 ways:
+a. merge : it do in paralle but sequence is not amintained
+b. concat : same as merge(runs inb parallel) and sequence is mainied -> slower than merge
+c. zip: it is special case when n'th char of each flux is combonecd together
+eg -> a,b,c : fluxa
+	  d,r,f : fluxb
+	  when merged reuslt to ad,br,cf : coding is similar to reduce in streams 

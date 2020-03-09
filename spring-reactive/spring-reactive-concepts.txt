@@ -91,4 +91,91 @@ b. concat : same as merge(runs inb parallel) and sequence is mainied -> slower t
 c. zip: it is special case when n'th char of each flux is combonecd together
 eg -> a,b,c : fluxa
 	  d,r,f : fluxb
-	  when merged reuslt to ad,br,cf : coding is similar to reduce in streams 
+	  when merged reuslt to ad,br,cf : coding is similar to reduce in streams
+	  
+we can create infinite series using Flux.interval -> returns long
+however subscibe function is non blocking so we can not see the flow
+we can limit the infinite series using take method
+however even then since subscibe funciton si non blocking the method returns and hence
+we wont see the data flowing from infinite series
+
+During testing we can use StepVerifier to have a limited series of inifinite data stream
+
+Stepverifies blocks main thread so we can see data flwoing though the infinite series
+Subscribe function is non blocking so can not see data flowing
+
+=====Back Pressure====
+back pressure help subscriber to control data flow so that it can handle the load and process without crash. 
+
+Project reactor is both push and pull based system
+
+subscriber pulls the data on need basis sand publisher pushes data as demenaded by subscriber
+for eg : in case request in bounded to 4 elements . publisher sends 4 and subscriber pulls
+4 entries however there is no cancel event on its own and hence publisher sends further evetns
+but subscriber do not pulls them and hecnce cancel event is important in such case
+
+cold flux : normal Flux object is cold flux example
+Everytime a subsciber is subscribed to the publisher then everytime it fetches data from
+beginining.
+
+Hot Flux : It is object of ConnectableFlux
+Everytime a sbscriber is connected to publisher
+it picks data from the moment it receives stream entries, no need to start form begininig
+
+for example if we sleep for few seconds after first subscriber starts
+and second subscriber about to start then earlier data will be skiped.
+eg: stock market publishers
+
+We can use virtualizedtime in step verifer test class to save time for scenarios that tkae huge time
+As this could impact build and deployment process
+
+In soring project reactor can be used in 2 set of stacks
+a. reactive stack
+b. servlet stack
+
+differences
+reactive												servlet stack
+a Non blocking / async do not wait               a.synchromous , blocking wait
+b. Fewer threads and use muti core                  b. One thread per request , Need horiontal scaling
+   processors efficiently
+   
+c.Can be cheaper as horizontal sacling not needed	c. Need horizontal scaling as threads will go out
+d. Need reactive security                        d. Need spring security
+e. Need netty server reactive                    e . Need servlet container in form of tomcat
+f. As of now support for reactive DB            f. canuse nosql or sql using DPA,spring JDBC
+like redis, mongo cassandra(nosql) 
+	
+g. Need spring Webflux for contrrolers            g. Need spring mvc for controller annotation
+  annotations	
+  
+  Two way to implement reactive programing inspring boot
+  
+  a. annoatated controller:     b. functional web in psring webflux
+  
+  @restcontroller
+  we can just return Flux instance and netty will make browser as non blcking subscriber
+  
+  by default return type is JSOn whihc makes brwoser as blcking
+  We can return JSON/stream media typoe and netty makes browser as non blocking subscriber
+  
+  While using restcontroller and returning Flux or mono with delay time then since the dfault return is json,
+  the subscriber waits for all data to complete
+  
+  Instead put produces == MediaType.applicaion_stream_json and data will be unblocking
+  
+   =====functional web in spring webflux=============
+  
+  In functional web we have two functions that handles the flow
+  a. router function : this tackles the request from the client and if mapping exist route to handle function
+  		-> router function cna be rleated to @getMapping or @requestmapping annotaion whihc maps the URL to method body
+  b. Handler Function : this do the actual processing of processing the request and sending response back to server.
+  				- > similar to mehtod body of functiona nnoatated with @requestmapping
+  	Handler function needs 2 classes - > ServerReuest -> same as HTTPRequest
+  										ServerResponse -> same as HTTPResponse
+  										
+  										
+ 
+ To test the reactive APIs we can use @webFluxTest annotation on class level, but it scans only ocntroller and restcontroller
+ 		-> it will help us autowire class WebTestClient that can be used as a client to hit api url
+ 	to scan and test services and repositories and components we shud use @springboottest
+ 	The use case of @spring boottest is functional web based project reactor -> handler and router function testing  

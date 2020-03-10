@@ -1,0 +1,9 @@
+Download mongodb community version.
+install by selecting yes
+create folder C:\data\db
+add C:\Program Files\MongoDB\Server\4.2\bin to path
+mongod is the command to start mongodb
+mongo command is for shell command
+comamand
+show dbs
+use localDB

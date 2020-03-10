@@ -179,3 +179,68 @@ g. Need spring Webflux for contrrolers            g. Need spring mvc for control
  		-> it will help us autowire class WebTestClient that can be used as a client to hit api url
  	to scan and test services and repositories and components we shud use @springboottest
  	The use case of @spring boottest is functional web based project reactor -> handler and router function testing  
+ 	
+ 	
+ 	in spring web flux netty is the default server that is embeded
+the netty server is a non blocking server that handles the non blocking apis using event loop architechture
+
+
+various modules of webflux in proper sequence
+a. web client(blocking or with help of netty it cna act as non blocking) 
+b. netty server -> acting as embeded non blcking server
+c. webflux handler > -> in spring boot it is netty reactor by default: It is used to identify the flux and mono type in request and response.
+d. webflux filter -It is filter acting as non blokcing fasion
+e. webflux dispatcher handler -> it identifies if the current request is mapped either in controller way(tested using webtestclient and webfluxtest anotation)
+					or functional web router way and route it to appropariate handler takes response and revert back to netty server
+
+All these module act in non blocking fashion including security and filterting.
+
+flow of each requeest in springboot webflux design:
+
+web client calls the API -> request goes to netty server -> webflux return flux instance whihc is like a token or promnise quickly
+				-> client calls the onsubscribe and rquest(unbounded) calls to the webflux controller
+				-> netty returns the even onnext one by one to client 
+				-> once all onnext are called it send onCompelte or onError in appropriate case
+				-> client can stop the onnext by calling cancel funciton of subscription  which will stop onnext, oncomplete and onError all the events
+				
+				
+Internal working of netty:
+Netty is a asynchornoues event driven frmework to handle large number of clients
+It is based on single threaded event loop processing multiple connections
+
+Tomcat is different to netty, in tomcat with spring mvc
+differences:
+a. in tomcat each cleint request is handled by seperate thread,
+		in netty it is handled by event loop, event loop is single threaded 
+b. tomcat blocks the connection until the whole data is sent back , basically it is blocking in nature
+		in netty a promise is sent back to client and hence allowing the connection thread to be used by other client
+		hence even with less threads we can handle multiple connections as each connection is processed quickly
+		in netty the data event is sent back to client using onnnext event until on complete.
+		
+Event loop:
+Netty has a single threaded process that is ever running. its task is to process any event
+An event is anything that clinet needs like create ocnnection , post ata, request for data etc
+
+Task of event loop is to pick event request from event queue and send appropriate action event for that request
+
+similar to node js
+
+Connection between client(non blocking) and netty server is called channel
+Each chanel have phases like created active, inactive . Since netty is async chanel is made inactive quickly and data is put in event queue to be processed
+by event loop (single threaded)
+
+in webflux we shud always use flux and mono otherwise the event loop will be blocked until the processing of sepcific event and hence
+other evetns will go in blocking state, however blocking code can be written as part of completablefutre or future or any new thread
+task
+
+everty time chanel is created it must register to event loop , so that future events cna be passed to same chanel only
+
+Event loops are generally gropued together for better productivity
+Each event loop has only single thread to run
+Ther can be 2 groups of event loop
+a. first one is to create new connections , register them to channels , deregister the chanel etc
+b. second one is responsible for processing the event queue by sending appropriate event
+
+hence there can be 2 threads per processor for netty server;
+total threads in netty serve = 2* number of processor
+

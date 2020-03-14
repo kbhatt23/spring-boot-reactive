@@ -244,3 +244,7 @@ b. second one is responsible for processing the event queue by sending appropria
 hence there can be 2 threads per processor for netty server;
 total threads in netty serve = 2* number of processor
 
+
+
+to run any class in a specific profie: use annotaion @activeProfiles("profile name") -> this will make sure once this class runs active profile is profile name
+this is used in test classes of junit 

@@ -248,3 +248,7 @@ total threads in netty serve = 2* number of processor
 
 to run any class in a specific profie: use annotaion @activeProfiles("profile name") -> this will make sure once this class runs active profile is profile name
 this is used in test classes of junit 
+
+flatMapMany : can be used to convert mono<x> to flux<Y>
+thenMany : Can be used to return Flux if previous function was returning mono
+then : if previous is mono we can return mono , if previous is flux then it will return flux

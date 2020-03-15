@@ -56,15 +56,53 @@ public class ItemHandler {
 		Mono<Item> requestBody = serverRequest.bodyToMono(Item.class);
 		
 		return requestBody.
-					flatMap(requestItem ->{
+				//filtering already existing items
+				//as this method is only for new creation only
+					filter(requestItem -> StringUtils.isEmpty(requestItem.getId()))
+					//assuming if id is not present then it means blindly we can create new entry inDB with new generate ID
+					.flatMap(requestItem ->{
 						return ServerResponse.created(URI.create("/"))
 								.contentType(MediaType.APPLICATION_STREAM_JSON)
 								.body(itemReactiveRepository.save(requestItem),Item.class)
 						;
 						
-					});
-					
-					
-					
+					})
+					.switchIfEmpty(ServerResponse.badRequest().build())
+					;
+	}
+	
+	public Mono<ServerResponse> deleteById(ServerRequest serverRequest){
+		String itemID = serverRequest.pathVariable("itemId");
+		if(StringUtils.isEmpty(itemID)) {
+			return ServerResponse.badRequest().build();
+		}
+		
+		return itemReactiveRepository.deleteById(itemID)
+						.log()
+						.then(ServerResponse.noContent().build())
+						.switchIfEmpty(ServerResponse.badRequest().build())
+							  ;
+		
+	}
+	
+	public Mono<ServerResponse> updateItem(ServerRequest serverRequest){
+		Mono<Item> itemMono = serverRequest.bodyToMono(Item.class);
+		
+		return itemMono.
+				//filtering items which do not exist
+				//if id do not exist how can we update
+					filter(requestItem -> !StringUtils.isEmpty(requestItem.getId()))
+					//assuming if id is not present then it means blindly we can create new entry inDB with new generate ID
+					.flatMap(requestItem ->{
+						return ServerResponse.ok()
+								.contentType(MediaType.APPLICATION_STREAM_JSON)
+								.body(itemReactiveRepository.save(requestItem),Item.class)
+						;
+						
+					})
+					.switchIfEmpty(ServerResponse.badRequest().build())
+					;
+				
+		
 	}
 }

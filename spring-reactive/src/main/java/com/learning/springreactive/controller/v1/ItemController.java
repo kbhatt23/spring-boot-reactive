@@ -31,7 +31,8 @@ public class ItemController {
 
 	@GetMapping(produces = MediaType.APPLICATION_STREAM_JSON_VALUE)
 	public Flux<Item> findAll() {
-		return repository.findAll().delayElements(Duration.ofSeconds(1)).log();
+		return repository.findAll().delayElements(Duration.ofSeconds(1)).log()
+				;
 	}
 
 	// better to use the next method, as

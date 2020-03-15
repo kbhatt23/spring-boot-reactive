@@ -30,7 +30,12 @@ public class ItemRouter {
 				.andRoute(POST("/v2/items")
 						.and(accept(MediaType.APPLICATION_JSON))
 						, itemHandler::createItem)
-				
+				.andRoute(DELETE("/v2/items/{itemId}")
+							.and(accept(MediaType.APPLICATION_JSON))
+						, itemHandler::deleteById)
+				.andRoute(PUT("/v2/items")
+						.and(accept(MediaType.APPLICATION_JSON))
+						, itemHandler::updateItem)
 				
 				
 				;

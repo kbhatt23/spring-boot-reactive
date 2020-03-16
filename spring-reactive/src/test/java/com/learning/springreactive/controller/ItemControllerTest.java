@@ -13,11 +13,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
+import com.learning.springreactive.controller.exception.CustomExceptionResponse;
 import com.learning.springreactive.document.Item;
 import com.learning.springreactive.repository.ItemReactiveRepository;
 
@@ -57,6 +59,21 @@ public class ItemControllerTest {
 				.expectStatus().isOk().returnResult(Item.class).getResponseBody();
 		StepVerifier.create(fluxItem).expectSubscription().expectNextCount(4).verifyComplete();
 
+	}
+	
+	@Test
+	public void testfindAllException() {
+		System.out.println("started test testfindAllException");
+		String expected = HttpStatus.INTERNAL_SERVER_ERROR.toString();
+		webTestClient.get().uri("/v1/items/exception")
+							.accept(MediaType.APPLICATION_STREAM_JSON)
+							.exchange()
+							.expectStatus().is5xxServerError()
+							.expectBody(CustomExceptionResponse.class)
+							.consumeWith(exceptionObj -> {
+								assertEquals(expected, exceptionObj.getResponseBody()
+															.getStatus());
+							});
 	}
 
 	// this method test only happy flwo when id is found

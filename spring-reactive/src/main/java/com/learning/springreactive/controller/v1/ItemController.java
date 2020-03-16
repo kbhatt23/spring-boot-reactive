@@ -34,6 +34,19 @@ public class ItemController {
 		return repository.findAll().delayElements(Duration.ofSeconds(1)).log()
 				;
 	}
+	
+	@GetMapping(value="/exception",produces = MediaType.APPLICATION_STREAM_JSON_VALUE)
+	public Flux<Item> findAllWithException() {
+		boolean kala =true;
+		if(kala) {
+			throw new RuntimeException("error me bhee sita ram");
+		}
+		return repository.findAll()
+				//mannually adding error
+							.concatWith(Flux.error(() -> new RuntimeException("error me bhee sita ram")))
+				
+				;
+	}
 
 	// better to use the next method, as
 	// in case data is not present we shud send 404 not found status

@@ -21,7 +21,7 @@ public class ItemRouter {
 		return RouterFunctions.route(
 				//setting the urlk here like we do in @getmapping
 				GET("/v2/items").and(accept(MediaType.APPLICATION_JSON_UTF8)),
-				itemHandler::findAllHandler
+				itemHandler::findAllWithException
 				)
 				//similar to @getmapping path variable
 				.andRoute(GET("/v2/items/{itemId}")
@@ -36,7 +36,6 @@ public class ItemRouter {
 				.andRoute(PUT("/v2/items")
 						.and(accept(MediaType.APPLICATION_JSON))
 						, itemHandler::updateItem)
-				
 				
 				;
 	}

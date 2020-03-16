@@ -35,7 +35,12 @@ public class ItemClientControllerExchangeV1 {
 					.exchange()
 					//flat map many is used to convert to flux from mono
 					.flatMapMany(clientResponse -> clientResponse.bodyToFlux(Item.class))
-					.log();
+					.log()
+					.onErrorMap(error -> {
+						System.out.println("retrieveAllItems: error occurred "+error.getMessage());
+						return new RuntimeException("error occurred while calling find all api");
+						})
+					;
 	}
 	
 	@GetMapping(value = "/{itemId}",produces = MediaType.APPLICATION_STREAM_JSON_VALUE)

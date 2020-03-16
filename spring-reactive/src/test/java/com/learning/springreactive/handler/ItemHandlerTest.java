@@ -18,6 +18,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
+import com.learning.springreactive.controller.exception.CustomExceptionResponse;
 import com.learning.springreactive.document.Item;
 import com.learning.springreactive.repository.ItemReactiveRepository;
 
@@ -50,6 +51,21 @@ public class ItemHandlerTest {
 				.blockLast();
 	}
 
+	//this will be tested only in case error occurs
+	@Test
+	public void testfindAllWithException() {
+		System.out.println("started test testfindAll");
+		String expected = "handler ke router ke excpetion me bhee ram";
+		webTestClient.get().uri("/v2/items").accept(MediaType.APPLICATION_STREAM_JSON).exchange()
+				.expectStatus().is5xxServerError().expectBody(CustomExceptionResponse.class).
+				consumeWith(itemResponse -> {
+					CustomExceptionResponse res = itemResponse.getResponseBody();
+					assertEquals(expected, res.getErrorMessage());
+				});
+				
+
+	}
+	
 	@Test
 	public void testfindAll() {
 		System.out.println("started test testfindAll");

@@ -33,7 +33,15 @@ public class ItemClientControllerRetrieveV1 {
 	return webClient.get().uri("/v1/items")
 					.retrieve()
 					.bodyToFlux(Item.class)
-					.log();
+					.log()
+					//this will be handled in controller advice
+					//or we coould have returned custom status also if we wanted using onErrorResume
+					//but will need controller advice and customexception response class
+					.onErrorMap(error -> {
+						System.out.println("retrieveAllItems: error occurred "+error.getMessage());
+						return new RuntimeException("error occurred while calling find all api");
+						})
+					;
 	}
 	
 	@GetMapping(value = "/{itemId}",produces = MediaType.APPLICATION_STREAM_JSON_VALUE)

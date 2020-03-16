@@ -252,3 +252,6 @@ this is used in test classes of junit
 flatMapMany : can be used to convert mono<x> to flux<Y>
 thenMany : Can be used to return Flux if previous function was returning mono
 then : if previous is mono we can return mono , if previous is flux then it will return flux
+
+As usual spring boot webflux automatically handles excpetios thrown at any place.
+We can use @controllerAdvice and @excepionhandler to send custom error message

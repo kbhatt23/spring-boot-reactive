@@ -105,4 +105,19 @@ public class ItemHandler {
 				
 		
 	}
+	
+	public Mono<ServerResponse> findAllWithException(ServerRequest serverRequest){
+		//make it true to test exception scenario
+		boolean sendError =true;
+		if(sendError)
+		throw new RuntimeException("handler ke router ke excpetion me bhee ram");
+		
+
+		return ServerResponse.ok()
+							 .contentType(MediaType.APPLICATION_STREAM_JSON)
+							 .body(itemReactiveRepository.findAll()
+									 .delayElements(Duration.ofSeconds(1))
+									 , Item.class);
+	
+	}
 }

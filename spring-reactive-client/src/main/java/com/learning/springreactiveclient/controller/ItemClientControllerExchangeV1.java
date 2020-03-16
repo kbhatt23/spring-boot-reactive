@@ -16,6 +16,7 @@ import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.learning.springreactiveclient.document.Item;
+import com.learning.springreactiveclient.exception.CustomExceptionResponse;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -40,6 +41,28 @@ public class ItemClientControllerExchangeV1 {
 						System.out.println("retrieveAllItems: error occurred "+error.getMessage());
 						return new RuntimeException("error occurred while calling find all api");
 						})
+					;
+	}
+	
+	//error handling that takes respone object from third party
+	@GetMapping(value = "/error",produces = MediaType.APPLICATION_STREAM_JSON_VALUE)
+	public Flux<Item> retrieveAllItemsError() {
+		
+	return webClient.get().uri("/v2/items")
+					.exchange()
+					//flat map many is used to convert to flux from mono
+					.flatMapMany(clientResponse -> {
+						if(clientResponse.statusCode().is5xxServerError()) {
+							Mono<CustomExceptionResponse> errorMono=clientResponse.bodyToMono(CustomExceptionResponse.class);
+							return errorMono.flatMap(error -> {
+								System.out.println("retrieveAllItemsError: error occurred "+error.getErrorMessage());
+								throw new RuntimeException(error.getErrorMessage());
+							});
+						}else {
+							return clientResponse.bodyToFlux(Item.class);
+						}
+					})
+					.log()
 					;
 	}
 	

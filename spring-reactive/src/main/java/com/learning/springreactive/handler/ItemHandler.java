@@ -108,7 +108,7 @@ public class ItemHandler {
 	
 	public Mono<ServerResponse> findAllWithException(ServerRequest serverRequest){
 		//make it true to test exception scenario
-		boolean sendError =true;
+		boolean sendError =false;
 		if(sendError)
 		throw new RuntimeException("handler ke router ke excpetion me bhee ram");
 		

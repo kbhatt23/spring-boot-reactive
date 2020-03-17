@@ -255,3 +255,34 @@ then : if previous is mono we can return mono , if previous is flux then it will
 
 As usual spring boot webflux automatically handles excpetios thrown at any place.
 We can use @controllerAdvice and @excepionhandler to send custom error message
+
+
+========SSE / Real time Streaming events=====
+
+SSE means server sent events or real time streaming service
+It means that there iwll be never ending data getting sent from server to client as soon as 
+new data comes in reactive DB
+
+Flow in normal reactive programming:
+client request for connection -> netty creates a channel and puts data in event loop
+-> server returns flux token and connection remains established . -> other event loop
+keep on processing it and send onnext , onnext...on complete evenes to clietn 
+-> connection is removed form event loop and between client and server
+
+Flow in SSE -> Server side event
+
+There is never a loss in netty channel connection , it keeps on emitting onnext event
+as soons as new data comes in reactive DB there will be no onComplete events
+
+mongo DB concepts to implement SSE , real time streaming endpoint
+a. tailable cursor : By default mongo db removes connection that process the data to request.
+once the whole data is porcessed for the reuqest mongodb rmeoves the connection
+This can be used for SSE as connection is never removed between clinet and server.
+
+b. capped collection : Mongo stores data in form of collection
+A capped collection is of fixed size , so once more data comes ols is removed.
+Itt is similar to que of fixed size.
+It retains the insertion order so first inserted is at the top and so on
+Once max size is over it removed the oldest one and add new ones.
+It can be used for stock ticker and hystrix like streaming
+

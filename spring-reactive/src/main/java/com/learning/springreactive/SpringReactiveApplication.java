@@ -16,8 +16,11 @@ import org.springframework.stereotype.Repository;
 
 import com.learning.springreactive.document.CappedItem;
 import com.learning.springreactive.document.Item;
+import com.learning.springreactive.document.ItemOrder;
+import com.learning.springreactive.document.ItemV1;
 import com.learning.springreactive.repository.CappedItemReactiveRepository;
 import com.learning.springreactive.repository.ItemReactiveRepository;
+import com.learning.springreactive.repository.ItemV1ReactiveRepository;
 
 import reactor.core.publisher.Flux;
 
@@ -33,6 +36,9 @@ public class SpringReactiveApplication {
 	
 	@Autowired
 	CappedItemReactiveRepository cappedItemReactiveRepository;
+	
+	@Autowired
+	private ItemV1ReactiveRepository ordersRepository;
 	public static void main(String[] args) {
 		ConfigurableApplicationContext context = SpringApplication.run(SpringReactiveApplication.class, args);
 		TestBean bean = context.getBean(TestBean.class);
@@ -68,7 +74,25 @@ public class SpringReactiveApplication {
 			
 			createCappedCollection();
 			createCappedCollectionData();
+			
+			 createItemOrders();
+			
+							
 		};
+	}
+
+	private void createItemOrders() {
+		List<ItemOrder> ordersItems = Arrays.asList(new ItemOrder("O12345", "order name 1", 2)
+				 	, new ItemOrder("O12346", "order name 2", 3)
+				 	, new ItemOrder("O12347", "order name 3", 4)
+				 );
+				 
+
+		ItemV1 itemV1 =  new ItemV1(null , "items orders description" , 23.23D , ordersItems);
+		ordersRepository.deleteAll()
+						.thenMany(ordersRepository.save(itemV1))
+						.subscribe(entryITemV1 -> System.out.println("saving item with V1 in orders repo"))
+						;
 	}
 
 	private void createCappedCollectionData() {

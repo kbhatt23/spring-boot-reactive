@@ -1,0 +1,36 @@
+ractive programming key points:
+non blocking
+event driven
+back pressure enabled
+enables that consumer do not get overwhemed by producers
+going away form one thread model
+make things scalable with lesser number of threads
+
+reactive programming helps solve issuw with large number of connections only/ 
+when less connections are needed it solves a lot performance issue with lesser threads
+
+when reactive programming is needed:
+a. when huge connections are needed between client and server
+b. when client need to enable back pressure
+c. scenarios when there are huge blocking calls like webservice call, file system call , DB calls
+
+Point C is important as in one thread per request model once a thread is hanlding the rqeuest and web service call/DB call happens
+ -> It blocks the thread and thread is idle , In reactive we have event loop whihc makes it completely non blokcing and thread continue on other task
+
+It helps in below ways
+a. Less thread is needed and hence cost will be lesser
+b. huge connection  
+
+reactive specification provides interface contracts like jpa provide
+it can be implemented by concrete projects like project reactor -> used by spring webflux by defualt
+
+Mono<Item> -> returns 0 to 1 ITem ibject
+Flux<ITem> -> returns 0-n elements of Item object , syntax is similar to List<Item> or Stream<Item> or Iterable<Item>
+
+
+Webflux supports DB with reactive socket only (this excludes sql based) eg : mongo , redis , casandra etc
+
+spring boot embraces embeded things so that u do not have to instal things seperatley and create risk of breaking funcitonality:
+eg: embeded maven , embeded DBs etc
+
+

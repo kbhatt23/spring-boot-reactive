@@ -50,19 +50,52 @@ public class Basics {
 	public void basicFluxTransformationDelay() {
 		Person person1 = new Person("sita ram", -1, -1);
 		Person person2 = new Person("radha krishna", -1, -1);
+		CountDownLatch latch = new CountDownLatch(1);
 		Flux<Person> fluxPerson = Flux.just(person1,person2).delayElements(Duration.ofSeconds(1));
-		
+
+
 		
 		fluxPerson
-		    .subscribe(entry -> System.out.println("extry found "+entry));
+		    .subscribe(entry -> System.out.println("extry found "+entry) , null  , latch::countDown);
 		
+		//instead of using sleep igt is better and elegant to use countdown latch
+		/*
+		 * try { Thread.sleep(4000); } catch (InterruptedException e) { // TODO
+		 * Auto-generated catch block e.printStackTrace(); }
+		 */
 		try {
-			Thread.sleep(4000);
+			latch.await();
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
+	
+	@Test
+	public void basicFluxTransformationDelay1() {
+		Person person1 = new Person("sita ram", -1, -1);
+		Person person2 = new Person("radha krishna", -1, -1);
+		CountDownLatch latch = new CountDownLatch(1);
+		Flux<Person> fluxPerson = Flux.<Person>generate(sink -> sink.next(person1)).delayElements(Duration.ofSeconds(1));
+
+
+		
+		fluxPerson
+		    .subscribe(entry -> System.out.println("basicFluxTransformationDelay1 : entry found "+entry));
+		
+		//instead of using sleep igt is better and elegant to use countdown latch
+		/*
+		 * try { Thread.sleep(4000); } catch (InterruptedException e) { // TODO
+		 * Auto-generated catch block e.printStackTrace(); }
+		 */
+		try {
+			latch.await();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
 	
 	@Test
 	public void basicFluxTransformationDefaultDelay() {

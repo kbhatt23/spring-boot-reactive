@@ -1,0 +1,88 @@
+docker run -d -p 27017-27019:27017-27019 --name mongodb mongo:4.0.4
+
+- Traditional app uses monolith and hence inter module communcation was faster as it was runing in same module
+- With microserive we need to interact using rest apis, now if all calls to D.B/web service calls(data source) is blocking in nature out main server's thread will be waiting 
+- To embrance distributed systems and good resource utilization and ignore one thread per request model we need reactive programming and reactive servers like netty
+
+- expecataion are changed in modern applications:
+	.low latency(in distriuted system it may increas because of more third party calls)
+	.max resource utilizaton(cloud is costly)
+	.scale based on load(use cloud/threadpools,forkjoin pool.reactive programming etc) 
+
+- Traditional app server structure:
+	a. since it is j2ee servlet concept , the tomcat acts as servlet container runnig war/jar file
+	b. It contains thread pools with max size and each rewuest from user gets assigned one of the thread from thread pool and it calls filters(j2ee servlet filters, fispatcherservet, controller mapping,controller,serviceclass, D.B/web servic calls)
+	c. the assigned thread will wait until the request is procesed with response and hence if once max users have taken server's threads , new users will wait
+	d. in microservice this is even more importeant to be reactive so that these server threads are not blocked, we can use paralle/async programming usins paralel strema,forkjoinpool and completablefutures
+	e. but we still need the server to go away form one thread per request mdoel
+
+- Tradtion api issues:
+	a. It is blocking and imperative in nature and multiple D.B/web service (i.o intensive tasks ) can be made in paralle
+		-> alsoi using java apis like future/compeltablefuture/forkjoin/parallestreams etc we cna do it but that also consumes more threads
+		-?> basically we want to solve the problem with minimum threads so that less memory is consumer in cloud based EC2 like instances and save money
+	b. there is no back pressure support -> meaning if a call is returning huge data there is no mechanism to tell D.B hey stop it now and slow down
+	c. less resource utilization from server side	: limit on concurrnet users at server level
+
+- Events in Reactive programming
+	lets say there is a jpa reactive method for all items fetching:
+	a. onnext: this event hold single item, if there are n items then d.b will need to call this event n times
+	b. onerror : in case of any error publishger send this so that it can be gracefully handled
+	c. oncomplete: if all ithe items evens are succesufully sent this will be snet meaning all task was completed
+
+- Reactive specification
+	- set of rules to be followed by concrete implemetnations of reactive apis like akka.rxjava, project reactor
+
+a. Publisher: The data source provider, cud be D.B, file system or web service api
+b. subsriber: Represent the subsriber who want s to access the data
+c. subsricption:  acontractual object between publisher and subscriber
+e. processer : combiantion of publisher and subscriber
+
+interface amnifesto:
+interface Publisher<T>{
+
+	public void subscribe(USbscriber<T> subscriber);
+}
+interface Subscriber<T>{
+	onNext(T t)
+	onComplete();
+	onError();
+	Subscritipon<T> subscription()
+}
+
+interface Subscription<T>{
+	request(long n);
+	cancel();
+}
+
+
+- any reactive implementation like project reactor/rxjava , java flow 9 uses comptebale futurestreams,paralle stream , jota time library etc
+
+
+- StepVerifier on calling verifycomplete actually blocks the flux so that actual expect count, on next and verifying the complete can be done
+	, however on subscribe reamins to fetch data until main is alive
+
+
+
+@WebFluxTest- Pulls and scans only contrroler and restcontroller and @service are ignored
+
+- Spring webflux using functional web have two things
+	a. router funtion : This contains the mapping of uris, once a client request for a uri it goes to router function to check if mapping exists
+		equivalent to the getmapping/request mapping anotation -> just tell the contarac tof url ampping and return type
+	
+	b. handler function: This has the main business logic , once a mapping exist in router function it comes to handler function to prepare resonse and return back to router function whihc then returns to server 
+		which then sends the response to client
+		equivalent to controllers method body which are annotated with @getmapping/@requestmapping etc
+
+- functional web have its own represenation of httprequest and httpresonse as serverrequest and serverresponse objects respectively
+
+- Annotations for testing
+	@webfluxtest: load only controllers but if controller have injected service componenet it wont work -> works fine with webtestclient if controller do ont inject any component
+	@datamongoTest: Inject all the monogo Repository only , 
+	above 2 saves time as whole spring boot context is loaded
+	@springBoottest :inject everything but we need to auto confiture webtestclient
+	
+
+- Once all the data that we requested from mpongo is poassed the connection is termaniated between client and mongodb.
+	this is useful in basic crud operations but in case of real time event sending
+	more documents will keep on adding ins ame collection and hence we do not want to keep on creating new connection
+	- this kind of connection is called tailable cursor which never kills the connection and hence straming events can use this

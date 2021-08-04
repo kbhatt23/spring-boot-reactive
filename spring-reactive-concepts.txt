@@ -1,0 +1,585 @@
+
+github link for course 2:
+https://github.com/vinsguru/java-reactive-programming-course
+
+
+Tomcat takes servlet container in spring boot as embeded tomcat server , 
+In Spring boot tomcat is embeded, so the max thread can be manipulated in application.properties
+	-> server.tomcat.max-threads -> this give thread pool max size -> these threads as part of servlet container(tomcat role) individually serve the request from client
+									-> this model is termed as thread per rquest model
+	-> This do not mean we give huge size of max thread pool size and win
+	-> as each thread have memory in RAM and it can make the performace bad as well if set to large value
+vertical scaling: increasing the number of threadd in sngle tomcat server
+horizonatal scaling: have more instance of spring boot applications
+
+so to handle huge request we can use horizontal scaling of apps using kubernetes or contianer orchestration but is costly
+
+so reactive programming try to get away from thread per request model
+
+reactive programming can we within one jvm level -> project reactor have reactor core library that can be used in any java project higher than jdk8
+, however reactive apis are over the network
+	spring webflux is a framwork that supports reactive apis over the network, however can only be used in spring framework and above jdk8
+		can not be used in any java project
+		
+- one thread per request model can be bad in microservices as if service a calls service b, until b returns data a thread in tomcat server of service A will be blocked
+			it is not hugely concurrent and have low throughput , if we increate number of thread in tomncat pool thatn it is very costly as each thread takes 1 MB memory
+- we can use horizontal scaling but that will be costly with less efficiency
+				in reactive programming we can utilize the machine resources to the fullest and hence less api instane will be needed for each service	whihc saves cost
+			
+mono means 0 or 1 element subscriber can recieve followed by onerror or oncomplete
+	so from java 8 mono is comparable to optional
+flux means 0 or n elements subscriber can recieve followed by onerror or onCompelte event
+		so a flux is comparable to Stream
+		
+Streams are lazy in java similar to that reactive streams like flux and mono are lazy/cold by default , untill a subscriber subscribes data publisher is lze
+			it do not pass the data to subscriber
+
+here we try to create more threads from the main thread and do tasks asynchronously -> hence utilization of resource is increased without increase in cost 	
+	-> similiar to asynchronous programming -> non blocking like futures
+	
+= reactie programmig is based on observer design pattern	
+
+flow of tech stack in java that try to solve above issue
+
+a. callables : runs in seperate thread , it do not returns anything and also hard to maintain
+b. future: runs in seperate thread it returns value , however multiple asynch task can not be done
+c. copletalblefuture -> easy to mainitain , same as future but cna handle multiple tasks asynchronously ,functional style and hecne easy to maintain
+
+but c is still tough and can be made better using spring reactive -> easy to use
+in completable future there is no back pressure support of data
+in reactrive programming there is back pressure support -> eg in reactive data comes like stream/even so each event will have only one item
+	this allows the service that calls db to process one by one and help in back pressure support
+
+also there is not good enough error handling support in completable future
+
+
+This means reactive programming have all feature of completable future + back pressure supports-> allowing consumer to tackle huge data tasks
+In JPa complatableFuture<List<ITem>> will be non lbocking but will eventually return all list items at once	
+					-> this will make tough for service class to handle and hence no back support
+in reactive programming -> it return stream/event one by one
+
+=======Reactive programming also solve issue with DB, 
+a. if DB is sending huge data then with traditional API it will crash and there is no communication to tell DB to slow down so that api can handle it
+This can be solved using reactive programming -> back pressure compatibility
+
+Issues with old traditional API
+a. Can not handle huge concurrent requests. we can do horizontal scaling but that's costly
+b. latency is more
+c. Can not handle DB back pressure
+d. can not have back pressure support to the client or any network call
+
+best API design approach
+a. Async and non blocking features
+b. move away from therad per request
+c. back pressure support in db/network call
+d. use fewer threads and utilize them using reactive programming to fullest - > as each thread takes lot of memory
+
+General example in real life scenario:
+a. imperative programming -> call > communcation happens only at that time
+b. reactive programming -> messaging -> can happen async
+
+Reactive programming is simpilkiar to reactive APIS but are more generic
+Data flows and back support is for streams/events in reactive programming howver in reactive API it have back pressure support on db as well
+
+reactive apis means asyn and non blocking behavior but over a netwrok and not just within a JVM machine(like completablefuture and reactive programming)
+
+Reactive Stream concepts(part of java 8)==========================
+
+interfaces
+a. publisher : this represents data source, it has data stream . 
+b. subscriber : this repreent businsess app that wants to access data from publkisher
+c. subscription : this is piplein between the above 2
+methods:
+publisher -> subscribe(Subscriber s)
+Subscriber -> onNext(T t) -> gets called n number of times T represent single entry put of n data requested
+	 -> onComplete() : gets called at the end success
+	 -> onError() - >gets called if any error occurred in subsciber
+Subscription -> cancel -> after calling this no event gets triggered from publisher like on next or oncomplete, on error etc
+	     -> request(long n) -> start eh cahin, publisher callls subscriber n number of time with individual entries
+
+whole flow
+Susbcriber calls subscibe function and pass subscriber object -> publisher sends Subscription object to Subscriber
+		-> Subscriber calls cancel or request function of Subscription -> then Publisher calls on next events n number of times
+		-> then publisher calls on complete funciton or onerror function o Subscriber
+
+The above specification is generic and is used by a lot of libraries
+Means all of them have implementation of above 4 interfaces(Subscriber, Publisher, Subscription , Processor)
+libraries eg: 
+RX java
+project reactor(spring boot default and recommened)
+JDK 9 : Flow classes
+akka
+
+ project reactor is async/non blocking reactive library implemeting reactive stream specification
+	uses JVM , compeltable future, functional programming , minimum jdk 8 is needed
+	by async and non blocking we mean that the main thread will be released and that will be free to do other thing
+		it is non blocking and main recieves a token using which it can take data from publisher
+	remember non blocking and asyn code is not easy to implement using low level java apis and hence project reactor have come up	
+part of project reactor ->
+	a. reactor core: contains actual implementation of reactive stream specificication like publisher, subscriber, subscription and processor
+		also add extra util like flx and mono to seperate out single and multiple data items
+	b. reactor netty
+	c. reactor test
+
+
+Testing using assert can be done usingStepverifier in webflux
+The exact sequence of events can be verified creating Stepverifier instance
+
+We can combine fluxes in 3 ways:
+a. merge : it do in paralle but sequence is not maintained
+b. concat : same as merge(runs inb parallel) and sequence is mainied -> slower than merge
+c. zip: it is special case when n'th char of each flux is combonecd together
+eg -> a,b,c : fluxa
+	  d,r,f : fluxb
+	  when merged reuslt to ad,br,cf : coding is similar to reduce in streams
+	  
+we can create infinite series using Flux.interval -> returns long
+however subscibe function is non blocking so we can not see the flow
+we can limit the infinite series using take method
+however even then since subscibe funciton si non blocking the method returns and hence
+we wont see the data flowing from infinite series
+
+During testing we can use StepVerifier to have a limited series of inifinite data stream
+
+Stepverifies blocks main thread so we can see data flwoing though the infinite series
+Subscribe function is non blocking so can not see data flowing
+
+=====Back Pressure====
+back pressure help subscriber to control data flow so that it can handle the load and process without crash. 
+
+Project reactor is both push and pull based system
+
+subscriber pulls the data on need basis sand publisher pushes data as demenaded by subscriber
+for eg : in case request in bounded to 4 elements . publisher sends 4 and subscriber pulls
+4 entries however there is no cancel event on its own and hence publisher sends further evetns
+but subscriber do not pulls them and hecnce cancel event is important in such case
+
+cold flux : normal Flux object is cold flux example
+Everytime a subsciber is subscribed to the publisher then everytime it fetches data from
+beginining.
+
+Hot Flux : It is object of ConnectableFlux
+Everytime a sbscriber is connected to publisher
+it picks data from the moment it receives stream entries, no need to start form begininig
+
+for example if we sleep for few seconds after first subscriber starts
+and second subscriber about to start then earlier data will be skiped.
+eg: stock market publishers
+
+We can use virtualizedtime in step verifer test class to save time for scenarios that tkae huge time
+As this could impact build and deployment process
+
+In spring project reactor can be used in 2 set of stacks
+a. reactive stack
+b. servlet stack
+
+differences
+reactive												servlet stack
+a Non blocking / async do not wait               a.synchromous , blocking wait
+b. Fewer threads and use muti core                  b. One thread per request , Need horiontal scaling
+   processors efficiently
+   
+c.Can be cheaper as horizontal sacling not needed	c. Need horizontal scaling as threads will go out
+d. Need reactive security                        d. Need spring security
+e. Need netty server reactive                    e . Need servlet container in form of tomcat
+f. As of now support for reactive DB            f. canuse nosql or sql using DPA,spring JDBC
+like redis, mongo cassandra(nosql) 
+	
+g. Need spring Webflux for contrrolers            g. Need spring mvc for controller annotation
+  annotations	
+  
+  Two way to implement reactive programing in spring boot
+  
+  a. annoatated controller:     b. functional web in spring webflux
+  
+  @restcontroller
+  we can just return Flux instance and netty will make browser as non blcking subscriber
+  
+  by default return type is JSOn whihc makes brwoser as blcking
+  We can return JSON/stream media typoe and netty makes browser as non blocking subscriber
+  
+  While using restcontroller and returning Flux or mono with delay time then since the dfault return is json,
+  the subscriber waits for all data to complete
+  
+  Instead put produces == MediaType.applicaion_stream_json and data will be unblocking
+  
+   =====functional web in spring webflux=============
+  
+  In functional web we have two functions that handles the flow
+  a. router function : this tackles the request from the client and if mapping exist route to handle function
+  		-> router function cna be rleated to @getMapping or @requestmapping annotaion whihc maps the URL to method body
+  b. Handler Function : this do the actual processing of processing the request and sending response back to server.
+  				- > similar to mehtod body of functiona nnoatated with @requestmapping
+  	Handler function needs 2 classes - > ServerReuest -> same as HTTPRequest
+  										ServerResponse -> same as HTTPResponse
+  										
+  										
+ 
+ To test the reactive APIs we can use @webFluxTest annotation on class level, but it scans only ocntroller and restcontroller
+ 		-> it will help us autowire class WebTestClient that can be used as a client to hit api url
+ 	to scan and test services and repositories and components we shud use @springboottest
+ 	The use case of @spring boottest is functional web based project reactor -> handler and router function testing  
+ 	
+ 	
+ 	in spring web flux netty is the default server that is embeded
+the netty server is a non blocking server that handles the non blocking apis using event loop architechture
+
+
+various modules of webflux in proper sequence
+a. web client(blocking or with help of netty it cna act as non blocking) 
+b. netty server -> acting as embeded non blcking server
+c. webflux handler > -> in spring boot it is netty reactor by default: It is used to identify the flux and mono type in request and response.
+d. webflux filter -It is filter acting as non blokcing fasion
+e. webflux dispatcher handler -> it identifies if the current request is mapped either in controller way(tested using webtestclient and webfluxtest anotation)
+					or functional web router way and route it to appropariate handler takes response and revert back to netty server
+
+All these module act in non blocking fashion including security and filterting.
+
+flow of each requeest in springboot webflux design:
+
+web client calls the API -> request goes to netty server -> webflux return flux instance whihc is like a token or promnise quickly
+				-> client calls the onsubscribe and rquest(unbounded) calls to the webflux controller
+				-> netty returns the even onnext one by one to client 
+				-> once all onnext are called it send onCompelte or onError in appropriate case
+				-> client can stop the onnext by calling cancel funciton of subscription  which will stop onnext, oncomplete and onError all the events
+				
+				
+Internal working of netty:
+Netty is a asynchornoues event driven frmework to handle large number of clients
+It is based on single threaded event loop processing multiple connections
+
+Tomcat is different to netty, in tomcat with spring mvc
+differences:
+a. in tomcat each cleint request is handled by seperate thread,
+		in netty it is handled by event loop, event loop is single threaded 
+b. tomcat blocks the connection until the whole data is sent back , basically it is blocking in nature
+		in netty a promise is sent back to client and hence allowing the connection thread to be used by other client
+		hence even with less threads we can handle multiple connections as each connection is processed quickly
+		in netty the data event is sent back to client using onnnext event until on complete.
+		
+Event loop:
+Netty has a single threaded process that is ever running. its task is to process any event
+An event is anything that clinet needs like create ocnnection , post ata, request for data etc
+
+Task of event loop is to pick event request from event queue and send appropriate action event for that request
+
+similar to node js
+
+Connection between client(non blocking) and netty server is called channel
+Each chanel have phases like created active, inactive . Since netty is async chanel is made inactive quickly and data is put in event queue to be processed
+by event loop (single threaded)
+
+in webflux we shud always use flux and mono otherwise the event loop will be blocked until the processing of sepcific event and hence
+other evetns will go in blocking state, however blocking code can be written as part of completablefutre or future or any new thread
+task
+
+everty time chanel is created it must register to event loop , so that future events cna be passed to same chanel only
+
+Event loops are generally gropued together for better productivity
+Each event loop has only single thread to run
+Ther can be 2 groups of event loop
+a. first one is to create new connections , register them to channels , deregister the chanel etc
+b. second one is responsible for processing the event queue by sending appropriate event
+
+hence there can be 2 threads per processor for netty server;
+total threads in netty serve = 2* number of processor
+
+
+
+to run any class in a specific profie: use annotaion @activeProfiles("profile name") -> this will make sure once this class runs active profile is profile name
+this is used in test classes of junit 
+
+flatMapMany : can be used to convert mono<x> to flux<Y>
+thenMany : Can be used to return Flux if previous function was returning mono
+then : if previous is mono we can return mono , if previous is flux then it will return flux
+
+As usual spring boot webflux automatically handles excpetios thrown at any place.
+We can use @controllerAdvice and @excepionhandler to send custom error message
+
+
+========SSE / Real time Streaming events=====
+
+SSE means server sent events or real time streaming service
+It means that there iwll be never ending data getting sent from server to client as soon as 
+new data comes in reactive DB
+
+Flow in normal reactive programming:
+client request for connection -> netty creates a channel and puts data in event loop
+-> server returns flux token and connection remains established . -> other event loop
+keep on processing it and send onnext , onnext...on complete evenes to clietn 
+-> connection is removed form event loop and between client and server
+
+Flow in SSE -> Server side event
+
+There is never a loss in netty channel connection , it keeps on emitting onnext event
+as soons as new data comes in reactive DB there will be no onComplete events
+
+mongo DB concepts to implement SSE , real time streaming endpoint
+a. tailable cursor : By default mongo db removes connection that process the data to request.
+once the whole data is porcessed for the reuqest mongodb rmeoves the connection
+This can be used for SSE as connection is never removed between clinet and server.
+
+b. capped collection : Mongo stores data in form of collection
+A capped collection is of fixed size , so once more data comes ols is removed.
+Itt is similar to que of fixed size.
+It retains the insertion order so first inserted is at the top and so on
+Once max size is over it removed the oldest one and add new ones.
+It can be used for stock ticker and hystrix like streaming
+
+
+-------coding concepts----------
+- by default in project reactor streaming is blocking in nature , but in webflux it is asyn and non blocking using daemon fork join threads
+	which means if we create mono fromsupplier and method takes more time, the main thread waits and not just vanishes, like a user thread(thread,runnable,executors,future,compeltablefuture type)
+- Mono.just should be used when we have data already , but we can use fromSupplier method to create mono to add laziness
+		meaning it is a supplier and hence the method will be called only when publisher is subscribed
+	in case of just method even if subscriber is not attached the method will be called , whihc is bad as untill publisher is subscribed data will be lost
+		we o something big and infact did nothing out it
+	better use fromSupplier to add laziness
+		the method to provide data will be only called when a subscriber attaches to the publisher, ading laziness
+	similar to optional methods orElse (create object even if data is present in optional)	 and orElseGet -. whihc creates object only when optional data was empty
+	in case of optional while using orElse method
+				//even though data is not empty it still calls method and create object for empty case
+    in case of optional while using orElseGet method (accepts supplier)
+				//empty case method is called an obect is created only when optional data is empty otherwise not		
+= callable interface is same like supplier however it can throw checked exception
+hence in case method thorws one exception use Mono.fromCallable method -> callable is also lazy meaning untill subscriber subscibes data method wont be called unline just method
+- project reactor provcided subscibe method on publisher whihc is by default blocking meaning it is not async and no blocking by default				
+
+- Mono.fromFuture method takes a compeltablefuture and returns a mono
+	since compeltable future runs in fork join threads which are daemon , the subscribe method of such mono will be asyn and no blocking
+- Mono.fromRunnable method takes a runnable instance and return a mono instance
+	since runnable returns nothing , directly oncompelt event will be called of subscriber
+	as usaul the subscribe emthod is blocking ( only for method fromFuture the subscribe method is asyn and non blockign as it runs in fork join daemon threads) 
+
+
+- always use flux.just when data is prepared already
+- this is eager so even though there is no subscriber it still prepares the data for publisher and hence we work on somethign that will be anyways ignored
+
+- Flux.fromStream take stream and create flux	, however there si a catch
+	if we have one stream and we operated on it using intermediate or terminla operation
+	then same object can not be operated again, remember the oeprations on stream returns a new stream , stream is immutable and any operation will actually give a new stream object
+ so if we use same variable and call operational methods twice on same variable then second time it will say stream sia lready used
+ same thing applies on flux created from stream, once used a flux wont be able to be subscribed again by a new subscriber
+create once and use once flux/stream in this method 
+
+- Remember just like streams flux will recieve the data one  by one and each data goes thorugh whole pipeline until subscriber onnext is called
+	untill one data is completely processed next data do not move to the pipeline	
+	if we add log statements then each data log will be printed by one , one until subscribe onnext is caleld and then all these are called for second data
+	
+- A reactive stream is difernt to list
+	in list we get all the data at once, meaning subscriber will get the whoel data at once
+	however in reactive stream like flux the subscriber will get the data one by one,
+	this will help subscriber to do the task with proepr time given to them
+	plus if data generation is time consuming stream will provide data one by one
+- Flux.interval method provide a flux whihc when subscribed is async by default (only fromFuture have similar subscribe behavior) 	
+
+- Flux.create method needs a consumer of sink
+	using sink we can programitically call onnext and oncomplete, onError methods
+	this is quite same like rxjava observable create method
+	FluxSink is thread safe and can be easily passed to multiple threads
+	we can also check if .isCancelled is false then only keep emmiting the data
+- the default take method have the capability to auto cancel upstream data so taht subscriber also do not listen more data and also publisher stops the data after count
+	the take method closes upstream and completes downstream for Flux method however for Flux.create method we need to manually check if sink.isCancelled is true we call sink.complete
+
+- Flux.create method and Flux.push and Flux.generate methods are lazy by default meaning until a subscribver attaches it do not even start creating the data in publisher
+
+Flux.create gets called only once internally so if we want to emit multiple data we need to have loop in fluxsink consumer
+however usign Flux.generate method same method of onNext inside the consumer is called in loop automatically, infinite loop
+we can use take method to block such inifinite stream created by generate method	
+
+operators:
+a. handle : equivalent to map+filter ; we get current data and sink object we can call method on sink like complete,next,error based on current data	
+	more flexiblity
+	
+b. hook methods like doOnNext, doOnCompelte, doOnsubscriber, doFrist, doFinally etc are hook methods whihc gets called once that specific event is triggered
+c. limitrate : if subscriber asks unbounded data to publisher then using limit rate we can slow down data count
+		here we define a buffer with max size, when subscriber calls unbounded limit rate buffer ignres it and request n number only
+		subscriber keeps on getting data from it, once 75 percent is consumed another request is made by limitrate buffer to publisher for another 75 items
+		once again if 75 more items are consumed  ,buffer asks for more 75 items
+		the max size of buffer and percent after which another request is configurable
+d. delayElements: purpose is to delay the sending of messages to the subscriber
+		what it do is it adds a limitrate buffer in the mddle whihc request for 32 items and gets all the 32 data at once
+		once this buffer gets the data it passes the data one by one with the mentioned delay time to the subscriber
+		the moment buffer size goes to 25 percent it asks for another 24		items
+e. onErrorReturn/onErrorResume/onErrorContinue
+		if one error occurred by default it goes to onError on blocks further data
+	in onErrorReturn and onErroreResume we can pass a default value for error scneario and ignores other remaining data	
+	onErrorContinue can be used when we still let remainig data to proceeed even in case of error
+	
+f. flatmap : incae we have flux of users and for each users we can have n number of order whihc can be represent as flux
+		we can use flatmap in this case
+		this means that finding users is time taking so we made it reactive using flux<user> hence user will come one by one with its time
+		for each of these user even finding orders item is time consuming so we have a flux of order
+		flatmap flattens it and keep everything in single publisher
+		because of this the order of user (root publisher) is not mainitained but is faster as it consider everything independent
+g. concatMap : same as flatMap but it ensures the sequence of root publisher (user) is maintained
+   untill orders of first user is not passed it do not start orders of other users
+just like java streams flux is immutable meaning any operator when called will return a new flux
+	if we used different variable thenit wont have new features added
+	
+- by default publishers are cold
+example is watching youtube video/netflix videos, the data stream is unique for everyone
+and it do not start emitting data until it subscribes and subscrber gets data from beginning
+there is no sharing among cold publisher uniue for all the subscriber instances
+- hot publisher start emnitting as soon as it is created, it do not wait for subscriber to subscibe and then only start emitting
+		it is like live match stream
+		single publisher for all the subscriber
+		
+- Flux.share method converts cold publisher to hot		
+	.share() // converts cold publisher to hot
+				//however it remains cold until first item subscribes
+				//after first subscription it becomes hot
+- Flux.publish() / / behaves same way as share, for first it is cold and after that it becomes hot for future subscribers
+- Flux.publish().autoconnect(0) : start emitting the data without subscriber, full hot even for first subscriber				
+
+- Project reactor is a asynchrous non blocking library for event driven messaging systems.
+ however internally it uses java apis like compeltable future , future ,threads some of whihc are very low level and hard to write code and maintatin
+  reactor have simplified this and mad eit flexible for devlopers to use it
+- by default reactor subscribe method is blocking means same runnign thread(main) will do the job for all the communication happens b/w pub and subscibe
+	meaning it will be time consuming and blocking
+	Same thread will exceute code present on publish and subscriber
+	
+ - we can ourselves create threads and subscribe them in runnable object based on thread count	
+	howecer managing threads is not easy so reactor have provided various thread pools whihc can be consumed using subscribeOn meothod
+	a. boundedElastic : it have thread count more than cores and hence useful in netwrok calls/io calls/db calls/file calls etc where thread remain blocked
+	b. parallel : used for cpu intensive tasks and thread count is less that or equal to cores, here processor remain busy in working on thread tasks
+	c. single : have a single thread but taht will also be different than current runnign thread
+	d. immediate: same as default behavior with no subscribeon : same runnign thread will call this
+		so it will be tough for dev to create and amnge threads on its own
+		
+- in short by default all the task like publisher onnext call, subscriber onnext,oncmplete, onsubscribe all these tasks are done by currently running thread whihc is main and is blocking
+ however if we call subscribeon emthod with proper scheudler it uses another thread pool to run all these mentioned task
+	so main will be free and can go to next line , this thread pool thread will make sure of runnign all the task like publisher data emission, subscriber recieving , onerror , oncomplete etc
+	//whatever thread subscribes the publisher using susbcribe method will do all the task onnext, emit, compelte etc
+	
+- subscribeOn can be used mutiple times hwever we must understand only first one matters
+	as with publsh on we can not cahnge the publisher emitter thread we can only update multiple times the subscriber chain, data emitter cahnge is always the irst subscribe on
+	this is done because the publisher dev is the best person to know abt threading moel of data emitter part 
+	hence he can add subscribeOn based on usage and consumer can not modify it only can modify its usable operators
+	
+	however in case of publishon we can override in subscriber
+	
+- remember in case of paralle or bounded schedulers it does not mean that multiple threads will work on same subscriber end to end
+ infact one thread will be assigned for each subsciber to carry on their individual tasks indepdently	
+ 
+- publishon feture is helpful for the subscriber for example publisher is running on thread using blocking but the subscriber wants to use paralle pool
+	so a subscriber can override the behavior using publish on but only for his part of consumption of message
+	publisher will still be using its own mechanism of sending data
+	so in short subscribeon gives same thread from pool to work for both data emitter and data consumer
+	but publisher can overwrite the behavior only for consumption part
+- can have multiple publsher and latest one updates previous one for that specific part of pipeline
+		but this can be time consuming in the pool switching
+		
+- to make overall processing fast we can use parallel method and runOn(scheduler) method together
+			it divides the data among fork join pool like parallel stream, but the sequence of data will go away
+			if publisher is able to emit data with fast pace then we can use parlle method and runon method which makes it 
+			
+- flux.interval and delayelement uses paralle thread schedulers making it async and non blocking			
+
+- in short publishon and subscribe on can help differetn thread from the pool to work on task for one subscriber
+	meaning if we have 10 messages then one thread will handle all message data emitting for one subcriber and another thread can do for other subscriber
+	- however to do data paralleism meaning break the data message an use multiple thread we can nto use publishona nd subscribeon
+	better use paralle and runon method for that but order of data will vanish then
+	
+	====backpressure/overflow strategies=======
+- Lets say we have created a pipeline where publisher uses different thread and subscriber uses different thread
+  if publisher is pushing the data with high speed but consumer thread (along with pipeline )is taking more time then this whole data of publisher will be kept in memory
+  we can see that before even subscriber starts all data is psed by publiser and hence can lead to out of memor error as objects can only be GCed once cosnumed succesfully
+  
+  strategies:
+  buffer: default behavior when no strategy is mentioned , keep all the data in memory and can lead to out of memory error is consumer is hugely slow
+  drop : some of the data present in the buffer will be lost however these data can be pushed to some other publisher for example to store in D.B etc so that can be replayed
+			similar to Dead letter queue/excahnge in rabbitmq/kafka
+		consider it like limitRate buffer it has 256 as max size in queue, if more item comes then until queue is free newer data/message will be lost
+	  however we can push it to another publisher like save in D.B or store etc where we can replay it
+  
+dropLAtest: same as drop however in this case when buffer is full it removes one of the old data and insert this new data
+	in case of drop when buffer was ful it used to ignore new data in the buffer untill consumer removes one of the data
+	however in dropLAtest in case buffer is full it removes the newest data inserted and insert this new	one
+
+error: when buffer size is full(256 by default) then it gives error	
+	basically when memory is full(256) and new data comes and consumer is unable to fill on time it throws error message to consumer
+	also we must use isCancelled method to stop emitting the data in publisher
+	
+=====combining publishers========	
+a. startsWith
+	A.startsWith(B) means all data will first come from B and if still consumer is needing more then only it comes from A
+	In a way it is reverse of concat meaning first B data will come and then A data
+	good example is a cache in front of infinite name generator
+b. concatWith: 	//will be opposite to startsWith
+		//lets eat fluxA first and if still consumer wants more take it from fluxB
+c. mergewith : in concatwith we can not start draining data from second or third flux untill we compeltely drain out first flux
+			meaning it is sequential
+			in merge with we can save time as soon as data comes from any stream flux we can drain that, order wont be mainitained
+d. zip : this merging is index based where 0th index data is merged with 0th index data of second flux
+				using both we can create one single data and hence size will be max(fluxA,fluxB)/2
+e. combinelatest: looks similar to zip however in this whatever is altest from each stream is taken
+					in zip we used to get math.min(fluxAsize,fluxBsize) elements
+					so count of data in final stream is the smaller sized flux
+					zip maintains index order means oth element get 0th element of flux b 1st element of fluxA get 1st element of fluxB until the size of smaller flux
+			in combine latest whatever data comes it is merged with latest of other streams and pushed to subscriber
+
+
+=======batching========
+Batching is different from limitrate as in limit rate an intermediate processor keep asking main publisher of data with fixed rate 
+				like 100 first and once 25 items are remaining in buffer then ask 75 more and so on
+				however the main subscriber still takes data one by one using onnext message
+batching is needed when a publisher is emitting the data however only when certain time is crossed or certian data are collected 
+					then only we want subcriber to get that list of data, quite useful in bulk operations like insertMany in mongo
+
+a. buffer: until specific size is reached it waits and send the list of data to subscriber
+				even in case publisher have limited data buffer knows that the data is finished so still it send that many data
+				eg buffer size is 5 and flux have 3 data only, after 3 data iteration buffer knows data is finished and hence it passes these 3 data to subscriber
+b. bufferwithTimeout: in case buffer size reaches pushes all the data but if not and timelimit exceeded then whatever we have will be passed
+					in short if timeout happens it sends so far list collected to subscriber
+					if no timeout but size is reached it fix all that data to subscriber
+c. window: same as buffer only differenc eis instead of giving a list of data in fixed time/amoujnt is reached this one returns a flux
+						making it asyn and non blocking
+			meaning in buffer it waits for either timeout or data count and then the list is passed to subscriber
+			in this as soon as data arrives it is pushed to subscriber
+			in short in cae of window we still have buffer however since it is flux as soon as one data comes it goes to map method
+			now we process them one by one as soon as they arrive but after count/tiime one batch is compelte so for that one message goes to the main subscriber
+			then again a new batch start but data is processed as soon as they arrive and once size/time completes one notification is sent to main subscriber
+d. group by: here based on condiition we create multiple flux based ont he key value
+				these flux should be of considerable less size(buffer) and should have independent subscriber to drain these flux bufffers
+				in window everytime the flux channel was closed after one batch process(size or time) but here we keep the flux channel open and hence size should be maintined nad should hae different subscribers for these indepdent buffers
+				
+repeat:
+when there is no error and all data is drained to the subscriber , a subscriber can resubscribe to the publisher
+	meaning once on next events are sent and then oncomplete occurs subscriber can reattempt to fetch the data again from begining
+	1,2,3,4,oncomplet, 1,2,3,4,1,2,3,4 oncompelte thats how evcents will be sent if repeat is done
+	however in case of error it wont repeat
+retry:
+same like repeat however happens only in case of error if error occurs we can reattempt and data will be sent from pub to sub from beginning	
+
+Sink is same like processor , it can act as publisher as well as subscriber
+using Sinks instance emit method we can send messsages to subscriber
+and using asFlux/asMono method we can get publisher which can be shared to subscribers
+
+Sink instances are thread safe by default
+//we can share the same sink object among multiple threads publishing the data and multip0le threads recieveing the data and no race condition occurs
+//no data loss
+
+//can not create multiple threads of subscribers even thouggh sink is thread safe as unicast allow single subscriber
+
+types of sink
+a. One : acts as a mono for subscriber. and n number of subscriber can drain data
+b. many.unicast: acts as a flux for subscriber, only 1 subscriber allowed for other subscribers it show onerror message
+c. many.multicast: acts as a flux for subscriber, n number of subscriber can subscribe, howecer it is hot by default
+	hot in the sense as .share method meaning for first subcriber data will not be lost for but other subscriber if they subscribe late then emitted so far data will be lost
+	by default it is like sahre method : meaning for first subscriber no data is lost and for other subscriber they loose data which were emitted before they were subscribed
+	we can make it fully hot like publish().autoconnect(0) method even for first subscriber we loose the data using allOrNothing method
+d. many.replay: like a cold publisher  ,  any late subscriber will still get the old emitted data/messages	
+
+========context======
+similar to context in grpc
+a key value pair data that a subscriber passes to publisher
+meaning in a pipeline one subscriber will share its context with the publisher
+this context can have data related to authentication etc and publisher can view this
+however pipeline subcribers below this specific oeprator wont be able to see only upstream operators can view context of below ones
+context is immutable and hence thread safe
+//remeber context is similar to grpc context
+//in grpc client can pass data via context key value map
+//simialrly here a subscriber can pass data to publisher
+//remeber every operator in chain addsa processor and hence our data can be seen via upstream operator only
+//downstream operator wont see one operator context data

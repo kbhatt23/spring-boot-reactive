@@ -100,13 +100,13 @@ public class UserService {
 		
 		   return this.usersRepository.creditUserBalance(requestDto.getUserID(), requestDto.getAmount())
                    .filter(i -> i == true)
-                   	.doOnNext(c -> System.out.println("first filter passed"))
+                   	.doOnNext(c -> System.out.println("credit: first filter passed"))
                    .map(b -> new UserTransactionEntity(requestDto))
                    .doOnNext(validated -> validated.setTransactionType(TransactionType.CREDIT))
                    .flatMap(this.userTransactionRepository::save)
                    .map(UserTransactionDTO :: new)
                    .map(i -> new ResponseEntity<>(i, HttpStatus.OK))
-            	   .switchIfEmpty(Mono.error(() -> new IllegalArgumentException("debit: unable to process credit")));
+            	   .switchIfEmpty(Mono.error(() -> new IllegalArgumentException("credit: unable to process credit")));
 		
 		
 		
@@ -116,7 +116,7 @@ public class UserService {
 
 		   return this.usersRepository.debitUserBalance(requestDto.getUserID(), requestDto.getAmount())
                 .filter(i -> i == true)
-                	.doOnNext(c -> System.out.println("first filter passed"))
+                	.doOnNext(c -> System.out.println("debit: first filter passed"))
                 .map(b -> new UserTransactionEntity(requestDto))
                 .doOnNext(validated -> validated.setTransactionType(TransactionType.DEBIT))
                 .flatMap(this.userTransactionRepository::save)

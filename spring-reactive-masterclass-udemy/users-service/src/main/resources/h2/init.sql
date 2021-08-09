@@ -14,3 +14,9 @@ create table user_transactions(
 	foreign key (user_id) references users(id) on delete cascade,
 	primary key(id)
 );
+
+insert into users (name,balance)
+values('messi',1000);
+
+insert into users (name,balance)
+values('xavi',700);

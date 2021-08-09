@@ -1,8 +1,5 @@
 package com.learning.users_service.dtos;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import com.learning.users_service.entities.UserEntity;
 
 import lombok.AllArgsConstructor;

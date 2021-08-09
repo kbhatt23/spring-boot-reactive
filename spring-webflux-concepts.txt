@@ -32,3 +32,10 @@ however spring boot provided support called spring data r2dbc whihc looks same l
 , in short it does provide repository for declarative CRUD operations
 	however we need to create tables and their relationship and cascade structure and other SQL things manually
 	also in code we need to set foreign key ids manually and @onetone kind of annotations do not exists
+	
+why to even use sprig data jpa whihc is blocking D.B call and not r2dbc
+a. r2dbc might not be supporting ur propsed D.B like oracle sql
+b. we laready have to migrate our code to reactive style and spring data jpa supports one to on etc relationships but r2dbc do not and we do nto want to make that many code changes as entitites are huge
+		remember r2dbc do not support @entity, @joincolum,@joinTable, @onetoone etc relationships, we need to manually create SQL with cascade, foreign key relationship
+			have foreign key id property in the entity class etc
+c. sometimes third party also will be blocking and that can not be migrated so we must use blocking client in our reactive code/service	

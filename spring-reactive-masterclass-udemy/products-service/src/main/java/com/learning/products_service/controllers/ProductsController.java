@@ -63,4 +63,14 @@ public class ProductsController {
 		
 		return productsService.findByPriceRange(minPrice, maxPrice);
 	}
+	
+	//server sent events
+	//whenver a product is created publish an event
+	//lets use sink instead of tailable cursor as of now
+	@GetMapping(path = "/create-events",produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+	Flux<ProductDTO> pushProductCreationEvent(){
+		return productsService.findProductCreateStream();
+	}
+	
+	
 }

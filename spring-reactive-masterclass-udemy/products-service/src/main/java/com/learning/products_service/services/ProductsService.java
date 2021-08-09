@@ -15,6 +15,7 @@ import com.learning.products_service.repositories.ProductsRepository;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
 
 @Service
 @Slf4j
@@ -22,6 +23,11 @@ public class ProductsService {
 
 	@Autowired
 	private ProductsRepository productsRepository;
+	
+	//multiple data
+	//multiple subscribers
+	//hot publisher -> like shared method , for first subscriber it will be cold and for others it will be hot
+	private Sinks.Many<ProductDTO> sinks ;
 	
 	
 	//flux mean 0 or 1 or 2 or 3...or n elements
@@ -57,6 +63,7 @@ public class ProductsService {
 					.flatMap(productsRepository :: save)
 					.map(ProductDTO :: new)
 					.doOnNext(output -> log.info("create: final created data "+output))
+					.doOnNext(sinks :: tryEmitNext)
 					.map(saved -> new ResponseEntity<>(saved, HttpStatus.CREATED))
 					.switchIfEmpty(Mono.error(() -> new IllegalArgumentException("create: can not pass id while inserting data")))
 					;
@@ -89,6 +96,14 @@ public class ProductsService {
 		return productsRepository.findByPriceBetween(minPrice, maxPrice)
 				 .map(ProductDTO :: new)
 				;
+	}
+	
+	public Flux<ProductDTO> findProductCreateStream() {
+		//sinks object is singleton for multiple subscribers
+		if(sinks == null)
+			sinks= Sinks.many().replay().all();
+		
+		return sinks.asFlux();
 	}
 	
 }

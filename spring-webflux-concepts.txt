@@ -1,0 +1,34 @@
+github url:
+https://github.com/vinsguru/spring-webflux-course
+
+- in spring mvc/spring rest if controller takes huge time in responding client is blocked
+	so before response is recieved if user closses the browser, the server keeps on working on the task and later on it is sent to no one
+	server do not have luxusy to cancel the data task when client cancels it,
+	however in spring webflux this appens automcatically when client closes the browser, it sends a cancel even to publisher and using flag isCancelled publisher can stop the work
+	
+	- in controller if we do not provide produces as stream media type the jackson converter converts the flux into Mono<List>
+		basically one by one all data of flux is collected into list and then it returns Mono<List<?>> hence it looks like blocking
+		however server still return reactive object but Mono
+		this looks like blocking but actually it is async and non blocking however since mono can return single item that seems like blocking
+		
+- remeber that in POST/PUT httmp method calls , request body can only be Mono<?>and a flux<>> in request body can not be used		
+	in GRPC even a request can be streaming but not so in spring webflux
+- a pathvariable/request parama is always resolved before calling controller and hence it can never be mono
+		however a request body payload can be huge and it can be mono (flux not possible)
+- just like spring web, spring webflux also handles any exception that occurs like runtime or check exception which are not caught in catch block
+ also we can handle it using custom excpetion handler and return custom json error bean using @controleradvice and @exceptionahdnler anntoation
+ 
+ 
+---- R2DBC---
+- Reactive relational data base connectivity
+- it provides connectors for communicating SQL based data bases in reactive fashion
+- do not relate with JPA and hibernate, its features are different to them, there is no interface like JPA here
+supported D.B mariaDB, mysqlDB, postgres, H2, microsoft sql server
+https://docs.spring.io/spring-data/r2dbc/docs/current/reference/html/#r2dbc.drivers
+however spring boot provided support called spring data r2dbc whihc looks same like JPA , however internally it hides the implementation whihc is different than hibernate
+- It do not support onetoone or many kind of relationship annotations
+- we need to create the tables and relationships manually
+- using foreign key we need to set foreign key id manually and need to do cascade manually
+, in short it does provide repository for declarative CRUD operations
+	however we need to create tables and their relationship and cascade structure and other SQL things manually
+	also in code we need to set foreign key ids manually and @onetone kind of annotations do not exists

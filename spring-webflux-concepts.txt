@@ -39,3 +39,13 @@ b. we laready have to migrate our code to reactive style and spring data jpa sup
 		remember r2dbc do not support @entity, @joincolum,@joinTable, @onetoone etc relationships, we need to manually create SQL with cascade, foreign key relationship
 			have foreign key id property in the entity class etc
 c. sometimes third party also will be blocking and that can not be migrated so we must use blocking client in our reactive code/service	
+
+=======server sent events====
+- lets say we have a scenario when client once subscriber will keep on getting data once some even hapens
+eg when a product is created let it show to client
+
+in traditional system it used to happen using polling where client after every 5 seconds call back end and get the data, but this adds to many network call that gets wasted
+like websockets SSE or server sent event can be used where we can have a persistence connection b/w client and server, server as soon as event occurs can push data to client
+
+it is like real time streaming where server keeps on pushing stream of data
+stream means seuential order of data whihc is immutable and unbounded meaning when next stream data comes we do not knwo and when it completes we do not know
